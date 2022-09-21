@@ -1,24 +1,26 @@
 from re import search
 from tracemalloc import start
 import random
+from warnings import resetwarnings
 
 class SentenceCorrector(object):
     def __init__(self, cost_fn, conf_matrix):
         alpha = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
-        self.options = {}
+        self._options = {}
         for char in alpha:
-            self.options[char]=[]
+            self._options[char]=[]
         for key,value in conf_matrix.items():
             for v in value:
-                if key not in self.options[v]:
-                    self.options[v].append(key)
+                if key not in self._options[v]:
+                    self._options[v].append(key)
         # print(self.options)
         self.conf_matrix = conf_matrix
         self.cost_fn = cost_fn
         self.best_state = None
         self._frontier = []
+        self._frontier_size = 20
 
-    def mult_search(self,i,max_len):
+    def local_beam_search(self,i):
         k = len(self._frontier)
         for idx in range(k):
             state = self._frontier[idx]
@@ -30,10 +32,29 @@ class SentenceCorrector(object):
                 temp = state[0:i]+ch+state[i+1:]
                 self._frontier.append(temp)
         self._frontier.sort(key=self.cost_fn)
-        if len(self._frontier) < max_len+1:
+        if len(self._frontier) <= self._frontier_size:
             return
         else:
-            self._frontier = self._frontier[0:max_len]
+            L = []
+            for u in range(self._frontier_size//2):
+                L.append(self._frontier.pop(0))
+            it = 0
+            p = 0.9
+            n = len(self._frontier)
+            while len(L)<self._frontier_size:
+                r = random.uniform(0.0,1.0)
+                elem = self._frontier.pop(0)
+                if r<=p:
+                    L.append(elem)
+                else:
+                    self._frontier.append(elem)
+                it+=1
+                p*=0.9
+                if it == n:
+                    it = 0
+                    p = 0.9
+                    n = len(self._frontier)
+            self._frontier = L
             
 
     def search_iter(self,state,itr):
@@ -131,9 +152,7 @@ class SentenceCorrector(object):
         #             self.best_state = temp
         #             min_cost = self.cost_fn(temp)
         # self.best_state = self.search_iter(start_state,0)
-        idxs = [i for i in range(n)]
-        random.shuffle(idxs)
         for i in range(n):
-            self.mult_search(i,20)
+            self.local_beam_search(i,self._frontier_size)
         self.best_state = self._frontier[0]
         print(self.cost_fn(start_state),self.cost_fn(self.best_state))

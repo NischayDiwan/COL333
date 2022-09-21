@@ -1,1 +1,3 @@
 Nischay Diwan-2020CS50433, Srijan Gupta-2020CS50444
+
+Our search algorithm is based on the idea of stochastic beam search
