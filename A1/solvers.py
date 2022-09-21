@@ -15,17 +15,16 @@ class SentenceCorrector(object):
         # You should keep updating following variable with best string so far.
         self.best_state = None
 
-    def __word_search(self,word_list):
-        pass  
 
     def search(self, start_state):
         """
         :param start_state: str Input string with spelling errors
         """
         # You should keep updating self.best_state with best string so far.
-        n = len(start_state)
-        L = start_state.split()
         self.best_state = start_state
+        min_cost = self.cost_fn(start_state)
+        print(min_cost)
+        n = len(start_state)
         min_cost = self.cost_fn(self.best_state)
         for i in range(n): # Attempt at using Best First Search
             c = self.best_state[i]
