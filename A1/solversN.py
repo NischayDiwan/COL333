@@ -4,32 +4,74 @@ from tracemalloc import start
 
 class SentenceCorrector(object):
     def __init__(self, cost_fn, conf_matrix):
+        alpha = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+        self.options = {}
+        for char in alpha:
+            self.options[char]=[]
+        for key,value in conf_matrix.items():
+            for v in value:
+                if key not in self.options[v]:
+                    self.options[v].append(key)
+        # print(self.options)
         self.conf_matrix = conf_matrix
         self.cost_fn = cost_fn
 
         # You should keep updating following variable with best string so far.
-        self.best_state = None  
+        self.best_state = None
 
-    def search_iter(self,state,i):
-        if(i >= 100):
+    def __word_search(self,word_list):
+        pass  
+
+    def search_iter(self,state,itr):
+        # Aproach 3
+        L = state.split(" ")
+        if(itr == len(L)):
             return state
         else:
-            m = len(state)
+            m = len(L[itr])
+            # print(m)
+            word = L[itr]
             temp_best = state
             temp_min = self.cost_fn(state)
             for i in range(m):
-                c = state[i]
-                if c == ' ':
-                    continue
-                L = self.conf_matrix[c]
-                for ch in L:
-                    temp = state[0:i]+ch+state[i+1:]
-                    cost = self.cost_fn(temp)
+                c = L[itr][i]
+                # if c == ' ':
+                #     continue
+                O = self.options[c]
+                for ch in O:
+                    temp = word[0:i]+ch+word[i+1:]
+                    TempL = L.copy()
+                    TempL[itr] = temp
+                    temp_state = ""
+                    for j in range(len(TempL)):
+                        temp_state += (TempL[j] + " ")
+                    cost = self.cost_fn(temp_state)
                     if cost < temp_min:
-                        temp_best = temp
+                        temp_best = temp_state
                         temp_min = cost
-            best_state = temp_best
-            return self.search_iter(temp_best,i+1)
+            self.best_state = temp_best
+            return self.search_iter(temp_best,itr+1)
+
+        # Approch 2
+        # if(itr >= 20):
+        #     return state
+        # else:
+        #     m = len(state)
+        #     temp_best = state
+        #     temp_min = self.cost_fn(state)
+        #     for i in range(m):
+        #         c = state[i]
+        #         if c == ' ':
+        #             continue
+        #         L = self.options[c]
+        #         for ch in L:
+        #             temp = state[0:i]+ch+state[i+1:]
+        #             cost = self.cost_fn(temp)
+        #             if cost < temp_min:
+        #                 temp_best = temp
+        #                 temp_min = cost
+        #     self.best_state = temp_best
+        #     return self.search_iter(temp_best,itr+1)
 
     def search(self, start_state):
         """
@@ -52,6 +94,5 @@ class SentenceCorrector(object):
         self.best_state = self.search_iter(start_state,0)
         print(self.cost_fn(start_state)," ",self.cost_fn(self.best_state))
         # print(start_state)
-        print(self.best_state)
+        # print(self.best_state)
         # print(self.cost_fn(self.best_state))
-
