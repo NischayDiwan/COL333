@@ -17,8 +17,6 @@ class SentenceCorrector(object):
         self.conf_matrix = conf_matrix
         self.cost_fn = cost_fn
         self.best_state = None
-        self._frontier = []
-        self._frontier_size = 50
 
     def local_beam_search(self,i):
         k = len(self._frontier)

@@ -17,8 +17,6 @@ class SentenceCorrector(object):
         self.conf_matrix = conf_matrix
         self.cost_fn = cost_fn
         self.best_state = None
-        self._frontier = []
-        self._frontier_size = 50
 
     def word_search(self,state):
         L = state.split(" ")
@@ -27,12 +25,6 @@ class SentenceCorrector(object):
         itr1 = 0
         while(itr1 <x*len(L)):
             itr = itr1 % len(L)
-            # print(itr)
-            # print(m)
-            # word = ""
-            # for k in range(x):
-            #     word += (L[itr+k] + " ")
-            # while(len(self._frontier) != 0):
             if(1 > 0):
                 word = L1[itr]
                 m = len(word)
@@ -140,21 +132,7 @@ class SentenceCorrector(object):
                                                         temp_best = temp_state
                                                         self.best_state = temp_best
                                                         temp_min = cost
-                            # else
-                                # if(itr == 5):
-                                #     print(temp_state)
-                            # if(len(self._frontier)<self._frontier_size):
-                            #     self._frontier.append(temp_state)
-                            # else:
-                            #     self._frontier.sort(key=self.cost_fn)
-                            #     f = self._frontier_size - 1
-                            #     if(cost < self.cost_fn(self._frontier[f])):
-                            #         self._frontier[f] = temp_state
-                        # print(len(self._frontier))
-                # self._frontier.sort(key=self.cost_fn)
-                # temp_best = self._frontier.pop(0)
                 self.best_state = temp_best
-                # print(temp_best)
                 state = temp_best
                 L = state.split(" ")
             itr1 += 1
@@ -167,8 +145,4 @@ class SentenceCorrector(object):
         # You should keep updating self.best_state with best string so far.
         n = len(start_state)
         self.best_state = start_state
-        min_cost = self.cost_fn(self.best_state)
-        self._frontier = []
-        self._frontier.append(start_state)
         self.best_state = self.word_search(start_state)
-        print(self.cost_fn(start_state),self.cost_fn(self.best_state))

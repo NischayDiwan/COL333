@@ -1,3 +1,16 @@
 Nischay Diwan : 2020CS50433, Srijan Gupta: 2020CS50444
 
-Our search algorithm is based on the combination of ideas, Iterative Deepening and Local Search. 
+Our search algorithm is based on the combination of ideas, Iterative Deepening, and Local Search. 
+
+The state is represented by the sentence string currently being analyzed.
+The operator used is changing a single character at a time with the possible characters it could be confused for.
+The transition cost is O(n), where n is the length of the string since, in python, strings are immutable, so at each change, a new string has to be created.
+Since the final goal state i.e., the correct sentence is unknown, the notion of a solution is to find the sentence of the lowest cost.
+As each character has 4 characters, it can be confused as the average branching factor for this problem is 5.
+
+Core Ideas:
+    At every step, the original state provided may always be accessed.
+    The algorithm iterates word by word over the sentence several times.
+    At each complete iteration of the sentence, the number of characters replaced in the word is increased by 1, starting with a single character change.
+    We have kept the maximum depth, i.e. maximum number of characters changed in one word to be 4.
+    After each character(s) changes, the cost function is evaluated on the whole sentence. If this cost is less than the current minimum cost, the best state is set to the current sentence.

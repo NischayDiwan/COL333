@@ -1,6 +1,7 @@
 all:
 	clear
 	python run.py -src data/input.txt -tar data/pred.txt -tm 2
+	diff data/pred.txt data/output.txt -w | grep -i "<" | wc -l
 
 best:
 	python run.py -src data/output.txt -tar data/perf.txt -tm 2
