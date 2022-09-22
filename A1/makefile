@@ -10,5 +10,5 @@ nis:
 	diff data/pred.txt data/output.txt -w | grep -i "<" | wc -l
 
 keke: 
-	python runN.py -src testcases/input1.txt -tar testcases/pred1.txt -tm 1
-	diff testcases/pred1.txt data/corpus.txt -w | grep -i "<" | wc -l
+	python runN.py -src testcases/input2.txt -tar testcases/pred2.txt -tm 2
+	diff testcases/pred2.txt data/corpus.txt -w | grep -i "<" | wc -l
