@@ -134,8 +134,9 @@ class SentenceCorrector(object):
     def word_search(self,state):
         # Aproach 3
         L = state.split(" ")
+        L1 = L.copy()
         itr1 = 0
-        while(itr1 <2* len(L)):
+        while(itr1 <3*len(L)):
             itr = itr1 % len(L)
             # print(itr)
             # print(m)
@@ -144,7 +145,7 @@ class SentenceCorrector(object):
             #     word += (L[itr+k] + " ")
             # while(len(self._frontier) != 0):
             if(1 > 0):
-                word = L[itr]
+                word = L1[itr]
                 m = len(word)
                 temp_best = state
                 temp_min = self.cost_fn(state)
@@ -166,10 +167,13 @@ class SentenceCorrector(object):
                         cost = self.cost_fn(temp_state)
                         if cost < temp_min:
                             temp_best = temp_state
+                            self.best_state = temp_best
                             temp_min = cost
-                if(m > 1):
+
+                # print(temp_best,temp_min)
+                if(m > 1 and (itr1 >=len(L))):
                     i,j = 0,0
-                    word = L[itr]
+                    word = L1[itr]
                     m = len(word)
                     for i in range(0,m-1):
                         for j in range(i+1,m):
@@ -193,38 +197,41 @@ class SentenceCorrector(object):
                                     cost = self.cost_fn(temp_state)
                                     if cost < temp_min:
                                         temp_best = temp_state
+                                        self.best_state = temp_best
                                         temp_min = cost
-                # if(m > 2):
-                #     i,j,g = 0,0,0
-                #     word = L[itr]
-                #     m = len(word)
-                #     for i in range(0,m-2):
-                #         for j in range(i+1,m-1):
-                #             for g in range(j+1,m):
-                #                 c = word[i]
-                #                 c1 = word[j]
-                #                 c2 = word[g]
-                #                 # if c == ' ':
-                #                 #     continue
-                #                 O = self._options[c]
-                #                 O1 = self._options[c1]
-                #                 O2 = self._options[c2]
-                #                 for ch in O:
-                #                     for ch1 in O1:
-                #                         for ch2 in O2:
-                #                             temp = word[0:i]+ch+word[i+1:j]+ch1+word[j+1:g]+ch2+word[g+1:]
-                #                             TempL = L.copy()
-                #                             TempL[itr] = temp
-                #                             temp_state = ""
-                #                             for jj in range(len(TempL)):
-                #                                 if(jj == len(TempL) - 1):
-                #                                     temp_state += TempL[jj]
-                #                                 else:
-                #                                     temp_state += (TempL[jj] + " ")
-                #                             cost = self.cost_fn(temp_state)
-                #                             if cost < temp_min:
-                #                                 temp_best = temp_state
-                #                                 temp_min = cost
+                # print(temp_best,temp_min)
+                if(m > 2 and (itr1 >= 2* len(L))):
+                    i,j,g = 0,0,0
+                    word = L1[itr]
+                    m = len(word)
+                    for i in range(0,m-2):
+                        for j in range(i+1,m-1):
+                            for g in range(j+1,m):
+                                c = word[i]
+                                c1 = word[j]
+                                c2 = word[g]
+                                # if c == ' ':
+                                #     continue
+                                O = self._options[c]
+                                O1 = self._options[c1]
+                                O2 = self._options[c2]
+                                for ch in O:
+                                    for ch1 in O1:
+                                        for ch2 in O2:
+                                            temp = word[0:i]+ch+word[i+1:j]+ch1+word[j+1:g]+ch2+word[g+1:]
+                                            TempL = L.copy()
+                                            TempL[itr] = temp
+                                            temp_state = ""
+                                            for jj in range(len(TempL)):
+                                                if(jj == len(TempL) - 1):
+                                                    temp_state += TempL[jj]
+                                                else:
+                                                    temp_state += (TempL[jj] + " ")
+                                            cost = self.cost_fn(temp_state)
+                                            if cost < temp_min:
+                                                temp_best = temp_state
+                                                self.best_state = temp_best
+                                                temp_min = cost
                             # else
                                 # if(itr == 5):
                                 #     print(temp_state)
