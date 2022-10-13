@@ -15,7 +15,7 @@ class AIPlayer:
         self.type = 'ai'
         self.player_string = 'Player {}:ai'.format(player_number)
         self.time = time
-        self._max_depth = 5
+        self._max_depth = 4
 
     def __new_state(self,player_num: int, move: Tuple[int,bool], state: Tuple[np.array, Dict[int, Integer]]):
         board,num_popouts=state
@@ -39,19 +39,27 @@ class AIPlayer:
 
     def __expectimax_search(self,player_num: int,move: Tuple[int,bool],state: Tuple[np.array, Dict[int, Integer]],depth: int):
         new_state = self.__new_state(player_num,move,state)
+        if depth >= self._max_depth:
+            return get_pts(player_num,new_state[0])
         opp_moves = get_valid_actions(3-player_num,new_state)
-        score = 0.0
-        for mov in opp_moves:
-            temp_state = self.__new_state(3-player_num,mov,new_state)
-            score+=get_pts(player_num,temp_state[0])
-        if len(opp_moves)!=0:
-            score/=len(opp_moves)
-        return score
+        if depth%2 == 1:
+            score = 0.0
+            for mov in opp_moves:
+                temp_state = self.__new_state(3-player_num,mov,new_state)
+                score+=self.__expectimax_search(3-player_num,mov,temp_state,depth+1)
+            if len(opp_moves)!=0:
+                score/=len(opp_moves)
+            return score
+        else:
+            score = -np.inf
+            for mov in opp_moves:
+                temp_state = self.__new_state(3-player_num,move,new_state)
+                score = max(score,self.__expectimax_search(3-player_num,mov,temp_state,depth+1))
+            return score
 
 
 
-
-    def __intelligent_search():
+    def __intelligent_search(self):
         pass
 
     def get_intelligent_move(self, state: Tuple[np.array, Dict[int, Integer]]) -> Tuple[int, bool]:
@@ -89,7 +97,6 @@ class AIPlayer:
         :return: action (0 based index of the column and if it is a popout move)
         """
         possible_moves = get_valid_actions(self.player_number,state)
-        orig_state = state
         max_score = -np.inf
         expectimax_move = None
         for move in possible_moves:
@@ -98,4 +105,3 @@ class AIPlayer:
                 max_score = temp_score
                 expectimax_move = move
         return expectimax_move
-        # self.__expectimax_search()
