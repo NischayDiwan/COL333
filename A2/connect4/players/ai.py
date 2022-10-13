@@ -28,6 +28,8 @@ class AIPlayer:
                     new_board[row,column]=player_num
                     break
         else:
+            if new_num_popouts[player_num].get_int()==0:
+                return new_board,new_num_popouts
             new_board[new_board.shape[0]-1,column]=0
             for row in range(new_board.shape[0]-1,0,-1):
                 new_board[row,column]=new_board[row-1,column]
@@ -38,26 +40,28 @@ class AIPlayer:
         pass
 
     def __expectimax_search(self,player_num: int,move: Tuple[int,bool],state: Tuple[np.array, Dict[int, Integer]],depth: int):
+        # assert(move in get_valid_actions(player_num,state))
+        if move not in get_valid_actions(player_num,state):
+            return 0
         new_state = self.__new_state(player_num,move,state)
         if depth >= self._max_depth:
-            return get_pts(player_num,new_state[0])
+            return get_pts(player_num,new_state[0])-get_pts(3-player_num,new_state[0])
         opp_moves = get_valid_actions(3-player_num,new_state)
-        if depth%2 == 1:
-            score = 0.0
+        # if new_state[1][3-player_num].get_int()==0:
+            # red = lambda tup : not tup[1]
+            # opp_moves = list(filter(red,opp_moves))
+        if depth%2 == 0:
+            score_diff = 0.0
             for mov in opp_moves:
-                temp_state = self.__new_state(3-player_num,mov,new_state)
-                score+=self.__expectimax_search(3-player_num,mov,temp_state,depth+1)
+                score_diff += self.__expectimax_search(3-player_num,mov,new_state,depth+1)
             if len(opp_moves)!=0:
-                score/=len(opp_moves)
-            return score
+                score_diff/=len(opp_moves)
+            return score_diff
         else:
-            score = -np.inf
+            score_diff = -np.inf
             for mov in opp_moves:
-                temp_state = self.__new_state(3-player_num,move,new_state)
-                score = max(score,self.__expectimax_search(3-player_num,mov,temp_state,depth+1))
-            return score
-
-
+                score_diff = max(score_diff,self.__expectimax_search(3-player_num,mov,new_state,depth+1))
+            return score_diff
 
     def __intelligent_search(self):
         pass
