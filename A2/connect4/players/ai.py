@@ -1,6 +1,7 @@
 import random
 import numpy as np
 from typing import List, Tuple, Dict
+
 from connect4.utils import get_pts, get_valid_actions, Integer
 
 
@@ -14,7 +15,44 @@ class AIPlayer:
         self.type = 'ai'
         self.player_string = 'Player {}:ai'.format(player_number)
         self.time = time
-        # Do the rest of your implementation here
+        self._max_depth = 5
+
+    def __new_state(self,player_num: int, move: Tuple[int,bool], state: Tuple[np.array, Dict[int, Integer]]):
+        board,num_popouts=state
+        new_board = np.copy(board)
+        new_num_popouts = num_popouts.copy()
+        column,is_popout=move
+        if not is_popout:
+            for row in range(new_board.shape[0]-1,-1,-1):
+                if new_board[row,column]==0:
+                    new_board[row,column]=player_num
+                    break
+        else:
+            new_board[new_board.shape[0]-1,column]=0
+            for row in range(new_board.shape[0]-1,0,-1):
+                new_board[row,column]=new_board[row-1,column]
+            new_num_popouts[player_num].decrement()
+        return new_board,new_num_popouts
+
+    def __expectimax_heuristic():
+        pass
+
+    def __expectimax_search(self,player_num: int,move: Tuple[int,bool],state: Tuple[np.array, Dict[int, Integer]],depth: int):
+        new_state = self.__new_state(player_num,move,state)
+        opp_moves = get_valid_actions(3-player_num,new_state)
+        score = 0.0
+        for mov in opp_moves:
+            temp_state = self.__new_state(3-player_num,mov,new_state)
+            score+=get_pts(player_num,temp_state[0])
+        if len(opp_moves)!=0:
+            score/=len(opp_moves)
+        return score
+
+
+
+
+    def __intelligent_search():
+        pass
 
     def get_intelligent_move(self, state: Tuple[np.array, Dict[int, Integer]]) -> Tuple[int, bool]:
         """
@@ -31,8 +69,7 @@ class AIPlayer:
                         2. Dictionary of int to Integer. It will tell the remaining popout moves given a player
         :return: action (0 based index of the column and if it is a popout move)
         """
-        # Do the rest of your implementation here
-        raise NotImplementedError('Whoops I don\'t know what to do')
+        self.__intelligent_search()
 
     def get_expectimax_move(self, state: Tuple[np.array, Dict[int, Integer]]) -> Tuple[int, bool]:
         """
@@ -51,5 +88,14 @@ class AIPlayer:
                         2. Dictionary of int to Integer. It will tell the remaining popout moves given a player
         :return: action (0 based index of the column and if it is a popout move)
         """
-        # Do the rest of your implementation here
-        raise NotImplementedError('Whoops I don\'t know what to do')
+        possible_moves = get_valid_actions(self.player_number,state)
+        orig_state = state
+        max_score = -np.inf
+        expectimax_move = None
+        for move in possible_moves:
+            temp_score = self.__expectimax_search(self.player_number,move,state,0)
+            if temp_score > max_score:
+                max_score = temp_score
+                expectimax_move = move
+        return expectimax_move
+        # self.__expectimax_search()

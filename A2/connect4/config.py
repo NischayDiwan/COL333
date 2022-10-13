@@ -1,2 +1,2 @@
-win_pts = [0, 0, 2, 5, 50]
+win_pts = [0, 0, 2, 5, 20]
 debug_mode = True
