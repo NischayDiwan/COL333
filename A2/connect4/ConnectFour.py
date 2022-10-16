@@ -78,20 +78,20 @@ class Game:
         self.player2_string = tk.Label(root, text=player2.player_string)
         self.player2_string.pack()
 
-        height = m * 100
-        width = n * 100
+        height = m * 50
+        width = n * 50
         self.c = tk.Canvas(root, height=height, width=width)
         self.c.pack()
         for j in range(n):
             column = []
-            row = j * 100
+            row = j * 50
             for i in range(m):
-                col = i * 100
+                col = i * 50
                 c = board[i][j]
-                column.append(self.c.create_oval(row, col, row + 100, col + 100, fill=self.colors[c]))
+                column.append(self.c.create_oval(row, col, row + 50, col + 50, fill=self.colors[c]))
             self.gui_board.append(column)
 
-        thread = Thread(target=self.threaded_function, args=(100000,))
+        thread = Thread(target=self.threaded_function, args=(2500,))
         thread.start()
         root.mainloop()
 
