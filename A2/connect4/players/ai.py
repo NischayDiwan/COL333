@@ -45,7 +45,7 @@ class AIPlayer:
         x = get_pts(player_num,state[0])
         y = get_pts(3-player_num,state[0])
         if(player_num == 1):
-            e = x-y
+            e = x
         else:
             e = x
         return e
@@ -113,7 +113,7 @@ class AIPlayer:
         board,popouts=state
         possible_moves = get_valid_actions(self.player_number,state)
         m = max(board.shape[1],len(possible_moves))
-        self._max_depth = math.floor(math.log(self.time,m) + 0.1 * math.log(2*self.time,m))
+        self._max_depth = math.floor(math.log(self.time,m) + 0.25 * math.log(2*self.time,m))
         print(self._max_depth)   
         max_score = -np.inf
         minimax_move = possible_moves[0]
