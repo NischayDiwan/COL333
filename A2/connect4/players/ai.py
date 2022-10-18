@@ -33,45 +33,20 @@ class AIPlayer:
         self.type = 'ai'
         self.player_string = 'Player {}:ai'.format(player_number)
         self.time = time
-        self._max_depth = 10
+        self._max_depth = 2
         self._col_dimension = 0
-
-    def __eval_expectimax(self,player_num: int,state: Tuple[np.array, Dict[int, Integer]],move: Tuple[int,bool]):
-        x = get_pts(player_num,state[0])
-        y = get_pts(3-player_num,state[0])
-        c,p = move
-        bc = 0.5*abs(c-self._col_dimension//2)
-        e = x-y-bc
-        return e
 
     def __eval(self,player_num: int,state: Tuple[np.array, Dict[int, Integer]],move: Tuple[int,bool]):
         x = get_pts(player_num,state[0])
         y = get_pts(3-player_num,state[0])
         if(player_num == 1):
-            e = x-y
+            if x!=0:
+                e = (x-y)/x
+            else:
+                e = x-y
         else:
             e = x-y
         return e
-
-    def __expectimax_search(self,player_num: int,move: Tuple[int,bool],state: Tuple[np.array, Dict[int, Integer]],depth: int):
-        new_state = next_state(player_num,move,state)
-        if depth >= self._max_depth:
-            return self.__eval_expectimax(player_num,new_state,move)
-        opp_moves = get_valid_actions(3-player_num,new_state)
-        score = 0.0
-        for mov in opp_moves:
-            temp_state = next_state(3-player_num,mov,new_state)
-            new_movs = get_valid_actions(player_num,temp_state)
-            maxi_score = 0
-            for new_mov in new_movs:
-                new_mov_score = self.__expectimax_search(player_num,new_mov,temp_state,depth+1)
-                # print("thought move at depth :",depth,new_mov, new_mov_score)
-                maxi_score = max(maxi_score,new_mov_score)
-            score+=maxi_score
-            # print("max score i get if opp plays",mov,"at depth :",depth,maxi_score)
-        if len(opp_moves)!=0:
-            score/=len(opp_moves)
-        return score
 
     def __minimax_search(self,player_num: int,move: Tuple[int,bool],state: Tuple[np.array, Dict[int, Integer]],depth: int):
         new_state = next_state(player_num,move,state)
@@ -134,6 +109,45 @@ class AIPlayer:
         print(self.player_number,"making move at depth :",0,minimax_move,max_score)
         return minimax_move
 
+    def __eval_expectimax(self,player_num: int,state: Tuple[np.array, Dict[int, Integer]],move: Tuple[int,bool]):
+        x = get_pts(player_num,state[0])
+        y = get_pts(3-player_num,state[0])
+        c,p = move
+        bc = abs(c-self._col_dimension//2)
+        if(x > 3* y):
+            e = x-y
+        elif(x >2*y):
+            e = x-5*y
+        else:
+            e = -y
+        return e
+
+    def __expectimax_search(self,player_num: int,move: Tuple[int,bool],state: Tuple[np.array, Dict[int, Integer]],depth: int):
+        new_state = next_state(player_num,move,state)
+        if depth <= 0:
+            return self.__eval_expectimax(player_num,new_state,move)
+        opp_moves = get_valid_actions(3-player_num,new_state)
+        score = 0.0
+        for mov in opp_moves:
+            temp_state = next_state(3-player_num,mov,new_state)
+            new_movs = get_valid_actions(player_num,temp_state)
+            maxi_score = -np.inf
+            for new_mov in new_movs:
+                new_mov_score = self.__expectimax_search(player_num,new_mov,temp_state,depth-1)
+                # print("thought move at depth :",depth,new_mov, new_mov_score)
+                maxi_score = max(maxi_score,new_mov_score)
+            if len(new_movs) ==0:
+                # print("no moves for me")
+                maxi_score = self.__eval(player_num,temp_state,mov) 
+            score+=maxi_score
+            # print("max score i get if opp plays",mov,"at depth :",depth,maxi_score)
+        if len(opp_moves)!=0:
+            score/=len(opp_moves)
+        if len(opp_moves)==0:
+            # print("no moves for opponent")
+            mini_score = self.__eval(player_num,new_state,move)
+        return score
+
     def get_expectimax_move(self, state: Tuple[np.array, Dict[int, Integer]]) -> Tuple[int, bool]:
         """
         Given the current state of the board, return the next move based on
@@ -154,22 +168,32 @@ class AIPlayer:
         tic = time.perf_counter()
         board,popouts=state
         possible_moves = get_valid_actions(self.player_number,state)
-        self._col_dimension = board.shape[1]
-        m = max(board.shape[1],len(possible_moves))
-        self._max_depth = math.floor(math.log(self.time,m) + 0.1 * math.log(2*self.time,m))
-        print(self._max_depth)   
-        max_score = 0
+        # self._col_dimension = board.shape[1]
+        # m = len(possible_moves)
+        # if(m>1):
+        #     self._max_depth = math.floor(math.log(self.time,m) + 0.25 * math.log(5*self.time,m))
+        # else:
+        #     self._max_depth = 1
+        # print(self._max_depth)
         expectimax_move = possible_moves[0]
-        for move in possible_moves:
+        for i in range(1,self._max_depth):
             toc = time.perf_counter()
-            if(toc-tic > 9 * (self.time)/10):
+            # print("time left :",self.time-toc+tic)
+            if(toc-tic > 8 * (self.time)/10):
                 break
-            temp_score = self.__expectimax_search(self.player_number,move,state,0)
-            print("thought move at depth :",0,move, temp_score)
-            if temp_score > max_score:
-                max_score = temp_score
-                expectimax_move = move
+            max_score = -np.inf
+            max_move = possible_moves[0]
+            for move in possible_moves:
+                toc = time.perf_counter()
+                if(toc-tic > 9 * (self.time)/10):
+                    break
+                temp_score = self.__expectimax_search(self.player_number,move,state,i)            
+                if temp_score > max_score:
+                    max_score = temp_score
+                    max_move = move
+            expectimax_move = max_move
+            # print("thought move at depth :",i,max_move,max_score)
         toc = time.perf_counter()
-        print("time left :",self.time-toc+tic)
-        print("making move at depth :",0,expectimax_move,max_score)
+        # print("time left :",self.time-toc+tic)
+        print("making move",expectimax_move)
         return expectimax_move
