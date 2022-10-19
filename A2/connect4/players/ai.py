@@ -97,11 +97,10 @@ class AIPlayer:
     def __eval(self,player_num: int,state: Tuple[np.array, Dict[int, Integer]],move: Tuple[int,bool]):
         x = heuristic(player_num,state[0])
         y = heuristic(3-player_num,state[0])
-        return x - y
+        return x-y
 
     def __minimax_search(self,player_num: int,move: Tuple[int,bool],state: Tuple[np.array, Dict[int, Integer]],depth: int, alpha: float, beta: float):
         new_state = next_state(player_num,move,state)
-        # print(get_pts(player_num,new_state[0]),heuristic(player_num,new_state[0]))
         if depth >= self._max_depth:
             return self.__eval(player_num,state,move)
         opp_moves = get_valid_actions(3-player_num,new_state)
@@ -112,21 +111,17 @@ class AIPlayer:
             maxi_score = -np.inf
             for new_mov in new_movs:
                 new_mov_score = self.__minimax_search(player_num,new_mov,temp_state,depth+1,alpha,beta)
-                # print("thought move at depth :",depth,new_mov, new_mov_score)
                 maxi_score = max(maxi_score,new_mov_score)
                 alpha = max(alpha,maxi_score)
                 if maxi_score >= beta:
                     break
             if len(new_movs) ==0:
-                print("no moves for me")
                 maxi_score = self.__eval(player_num,temp_state,mov) 
             mini_score = min(mini_score,maxi_score)
             beta = min(beta,mini_score)
             if mini_score <= alpha:
                 break
-            # print("max score i get if opp plays",mov,"at depth :",depth,maxi_score)
         if len(opp_moves)==0:
-            print("no moves for opponent")
             mini_score = self.__eval(player_num,new_state,move)
         return mini_score
 
@@ -148,9 +143,9 @@ class AIPlayer:
         tic = time.perf_counter()
         board,popouts=state
         possible_moves = get_valid_actions(self.player_number,state)
+        self._col_dimension = board.shape[1]
         m = max(board.shape[1],len(possible_moves))
-        self._max_depth = math.floor(math.log(self.time,m) + 0.5 * math.log(2*self.time,m)) +1
-        print(self._max_depth)   
+        self._max_depth = math.floor(math.log(self.time,m) + 0.5 * math.log(2*self.time,m)) +1  
         max_score = -np.inf
         minimax_move = possible_moves[0]
         for move in possible_moves:
@@ -158,24 +153,15 @@ class AIPlayer:
             # if(toc-tic > 9 * (self.time)/10):
             #     break
             temp_score = self.__minimax_search(self.player_number,move,state,0,-np.inf,np.inf)
-            # print("thought move at depth :",0,move, temp_score)
             if temp_score > max_score:
                 max_score = temp_score
                 minimax_move = move
         toc = time.perf_counter()
-        print("time left :",self.time-toc+tic)
-        print(self.player_number,"making move at depth :",0,minimax_move,max_score)
         return minimax_move
 
     def __eval_expectimax(self,player_num: int,state: Tuple[np.array, Dict[int, Integer]],move: Tuple[int,bool]):
         x = heuristic(player_num,state[0])
         y = heuristic(3-player_num,state[0])
-        if(x > 3* y):
-            e = x-y
-        elif(x >2*y):
-            e = x-5*y
-        else:
-            e = -y
         if y!=0:
             return (x-y)/y
         else:
@@ -193,17 +179,13 @@ class AIPlayer:
             maxi_score = -np.inf
             for new_mov in new_movs:
                 new_mov_score = self.__expectimax_search(player_num,new_mov,temp_state,depth-1)
-                # print("thought move at depth :",depth,new_mov, new_mov_score)
                 maxi_score = max(maxi_score,new_mov_score)
             if len(new_movs) ==0:
-                # print("no moves for me")
                 maxi_score = self.__eval_expectimax(player_num,temp_state,mov) 
             score+=maxi_score
-            # print("max score i get if opp plays",mov,"at depth :",depth,maxi_score)
         if len(opp_moves)!=0:
             score/=len(opp_moves)
         if len(opp_moves)==0:
-            # print("no moves for opponent")
             mini_score = self.__eval_expectimax(player_num,new_state,move)
         return score
 
@@ -227,17 +209,9 @@ class AIPlayer:
         tic = time.perf_counter()
         board,popouts=state
         possible_moves = get_valid_actions(self.player_number,state)
-        # self._col_dimension = board.shape[1]
-        # m = len(possible_moves)
-        # if(m>1):
-        #     self._max_depth = math.floor(math.log(self.time,m) + 0.25 * math.log(5*self.time,m))
-        # else:
-        #     self._max_depth = 1
-        # print(self._max_depth)
         expectimax_move = possible_moves[0]
         for i in range(1,self._max_depth):
             toc = time.perf_counter()
-            # print("time left :",self.time-toc+tic)
             if(toc-tic > 8 * (self.time)/10):
                 break
             max_score = -np.inf
@@ -251,8 +225,5 @@ class AIPlayer:
                     max_score = temp_score
                     max_move = move
             expectimax_move = max_move
-            # print("thought move at depth :",i,max_move,max_score)
         toc = time.perf_counter()
-        # print("time left :",self.time-toc+tic)
-        print("making move",expectimax_move)
         return expectimax_move

@@ -1,0 +1,13 @@
+﻿Nischay Diwan : 2020CS50433, Srijan Gupta: 2020CS50444
+
+
+Expectimax Move Algorithm:
+
+
+This algorithm uses depth-limited expectimax search. The depth is determined using the number of available moves and the size of the board. In a single step, both max and expect are explored. The heuristic is calculated by squaring the points at each position received and then taking the relative difference. On average, our agent is able to get a score double than the random agent.
+
+
+Intelligent Move Algorithm:
+
+
+This algorithm uses depth-limited minimax search with alpha-beta pruning. The use of pruning has allowed a depth increase of 2 within the time limit. The depth is determined using the number of available moves and the size of the board. In a single step, both max and min are explored. The heuristic is calculated by squaring the points at each position received and then taking the difference.
