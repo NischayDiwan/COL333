@@ -1,7 +1,8 @@
 import random
 import numpy as np
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Union
 from connect4.utils import get_pts, get_valid_actions, Integer
+from connect4.config import win_pts
 import copy
 import time
 import math
@@ -23,6 +24,63 @@ def next_state(player_num: int, move: Tuple[int,bool], state: Tuple[np.array, Di
         new_board[0,column]=0
     return new_board,new_num_popouts
 
+def get_row_score(player_number: int, row: Union[np.array, List[int]]):
+    score = 0
+    n = len(row)
+    j = 0
+    while j < n:
+        if row[j] == player_number:
+            count = 0
+            while j < n and row[j] == player_number:
+                count += 1
+                j += 1
+            k = len(win_pts) - 1
+            score += (win_pts[count % k] ** 2) + (count // k) * (win_pts[k] ** 2)
+        else:
+            j += 1
+    return score
+
+
+def get_diagonals_primary(board: np.array) -> List[int]:
+    m, n = board.shape
+    for k in range(n + m - 1):
+        diag = []
+        for j in range(max(0, k - m + 1), min(n, k + 1)):
+            i = k - j
+            diag.append(board[i, j])
+        yield diag
+
+
+def get_diagonals_secondary(board: np.array) -> List[int]:
+    m, n = board.shape
+    for k in range(n + m - 1):
+        diag = []
+        for x in range(max(0, k - m + 1), min(n, k + 1)):
+            j = n - 1 - x
+            i = k - x
+            diag.append(board[i][j])
+        yield diag
+
+def heuristic(player_number: int,board: np.array) -> int:
+    """
+    :return: Returns the total score of player (with player number) on the board
+    """
+    score = 0
+    m, n = board.shape
+    # score in rows
+    for i in range(m):
+        score += get_row_score(player_number, board[i])
+    # score in columns
+    for j in range(n):
+        score += get_row_score(player_number, board[:, j])
+    # scores in diagonals_primary
+    for diag in get_diagonals_primary(board):
+        score += get_row_score(player_number, diag)
+    # scores in diagonals_secondary
+    for diag in get_diagonals_secondary(board):
+        score += get_row_score(player_number, diag)
+    return score
+
 class AIPlayer:
     def __init__(self, player_number: int, time: int):
         """
@@ -37,24 +95,15 @@ class AIPlayer:
         self._col_dimension = 0
 
     def __eval(self,player_num: int,state: Tuple[np.array, Dict[int, Integer]],move: Tuple[int,bool]):
-        x = get_pts(player_num,state[0])
-        y = get_pts(3-player_num,state[0])
-        if(player_num == 1):
-            if x!=0:
-                e = (x-y)/x
-            else:
-                e = x-y
-        else:
-            if x!=0:
-                e = (x-y)/x
-            else:
-                e = x-y
-        return e
+        x = heuristic(player_num,state[0])
+        y = heuristic(3-player_num,state[0])
+        return x - y
 
     def __minimax_search(self,player_num: int,move: Tuple[int,bool],state: Tuple[np.array, Dict[int, Integer]],depth: int, alpha: float, beta: float):
         new_state = next_state(player_num,move,state)
+        # print(get_pts(player_num,new_state[0]),heuristic(player_num,new_state[0]))
         if depth >= self._max_depth:
-            return self.__eval(player_num,new_state,move)
+            return self.__eval(player_num,state,move)
         opp_moves = get_valid_actions(3-player_num,new_state)
         mini_score = np.inf
         for mov in opp_moves:
@@ -119,17 +168,18 @@ class AIPlayer:
         return minimax_move
 
     def __eval_expectimax(self,player_num: int,state: Tuple[np.array, Dict[int, Integer]],move: Tuple[int,bool]):
-        x = get_pts(player_num,state[0])
-        y = get_pts(3-player_num,state[0])
-        c,p = move
-        bc = abs(c-self._col_dimension//2)
+        x = heuristic(player_num,state[0])
+        y = heuristic(3-player_num,state[0])
         if(x > 3* y):
             e = x-y
         elif(x >2*y):
             e = x-5*y
         else:
             e = -y
-        return e
+        if y!=0:
+            return (x-y)/y
+        else:
+            return x-y
 
     def __expectimax_search(self,player_num: int,move: Tuple[int,bool],state: Tuple[np.array, Dict[int, Integer]],depth: int):
         new_state = next_state(player_num,move,state)
@@ -147,14 +197,14 @@ class AIPlayer:
                 maxi_score = max(maxi_score,new_mov_score)
             if len(new_movs) ==0:
                 # print("no moves for me")
-                maxi_score = self.__eval(player_num,temp_state,mov) 
+                maxi_score = self.__eval_expectimax(player_num,temp_state,mov) 
             score+=maxi_score
             # print("max score i get if opp plays",mov,"at depth :",depth,maxi_score)
         if len(opp_moves)!=0:
             score/=len(opp_moves)
         if len(opp_moves)==0:
             # print("no moves for opponent")
-            mini_score = self.__eval(player_num,new_state,move)
+            mini_score = self.__eval_expectimax(player_num,new_state,move)
         return score
 
     def get_expectimax_move(self, state: Tuple[np.array, Dict[int, Integer]]) -> Tuple[int, bool]:
