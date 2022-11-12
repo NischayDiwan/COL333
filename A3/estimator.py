@@ -1,6 +1,8 @@
 import util 
 from util import Belief, pdf 
 from engine.const import Const
+import random
+import math
 
 # Class: Estimator
 #----------------------
@@ -8,7 +10,8 @@ from engine.const import Const
 class Estimator(object):
     def __init__(self, numRows: int, numCols: int):
         self.belief = util.Belief(numRows, numCols) 
-        self.transProb = util.loadTransProb() 
+        self.transProb = util.loadTransProb()
+        self._time = 1
             
     ##################################################################################
     # [ Estimation Problem ]
@@ -36,11 +39,25 @@ class Estimator(object):
     ###################################################################################
     def estimate(self, posX: float, posY: float, observedDist: float, isParked: bool) -> None:
         # BEGIN_YOUR_CODE
-
+        numRows = self.belief.getNumRows()
+        numCols = self.belief.getNumCols()
+        sd = Const.SONAR_STD
+        d = sd
+        self._time += 1
+        for i in range(numRows):
+            for j in range(numCols):
+                gridX = util.colToX(j)
+                gridY = util.rowToY(i)
+                # approach 1
+                # if((observedDist*(1-d))**2 <= abs(posX-gridX)**2 + abs(posY-gridY)**2 <= (observedDist*(1+d))**2):
+                #     self.belief.setProb(i,j,1000000)
+                # else:
+                #     self.belief.setProb(i,j,0.00000001)
+                # approach 2
+                self.belief.setProb(i,j,util.pdf(observedDist,d,math.sqrt(abs(posX-gridX)**2 + abs(posY-gridY)**2)))
+        self.belief.normalize()
         # END_YOUR_CODE
         return
   
     def getBelief(self) -> Belief:
         return self.belief
-
-   
