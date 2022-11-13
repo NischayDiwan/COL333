@@ -12,7 +12,7 @@ class Estimator(object):
         self.belief = util.Belief(numRows, numCols) 
         self.transProb = util.loadTransProb()
         self._time = 1
-        self._numParticles = 500
+        self._numParticles = 1000
         self._particles = [None]*self._numParticles
         self._tMap = {}
             
@@ -71,14 +71,6 @@ class Estimator(object):
                 for j in range(numCols):
                     gridX = util.colToX(j)
                     gridY = util.rowToY(i)
-                    # approach 1
-                    # if((observedDist*(1-d))**2 <= abs(posX-gridX)**2 + abs(posY-gridY)**2 <= (observedDist*(1+d))**2):
-                    #     self.belief.setProb(i,j,1000000)
-                    # else:
-                    #     self.belief.setProb(i,j,0.00000001)
-                    # approach 2
-                    # self.belief.setProb(i,j,util.pdf(observedDist,d,math.sqrt(abs(posX-gridX)**2 + abs(posY-gridY)**2)))
-                    # approach 3
                     flatBelief[0].append((i,j))
                     flatBelief[1].append(util.pdf(e,sd,math.sqrt(abs(posX-gridX)**2 + abs(posY-gridY)**2)))
                     self._tMap[(i,j)] = [[],[]]
@@ -104,7 +96,7 @@ class Estimator(object):
             prcls[k] = random.choices(prcls1,wts)[0]
         # inferencing from the particles
         for k in range(N):
-            self.belief.addProb(prcls[k][0],prcls[k][1],10000)
+            self.belief.addProb(prcls[k][0],prcls[k][1],100000)
         self._time += 1
         self._particles = prcls
         self.belief.normalize()
