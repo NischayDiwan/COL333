@@ -16,6 +16,8 @@ import time
 import datetime
 import os
 
+# random.seed('driverless_car')
+
 if __name__ == '__main__':
     
     parser = optparse.OptionParser()
@@ -46,7 +48,7 @@ if __name__ == '__main__':
     Const.MULTIPLE_GOALS = options.checkpoints
     if options.checkpoints:
         Const.WORLD = 'm_'+str(Const.WORLD)
-        if Const.WORLD=='m_small':
+        if Const.WORLD=='m_small' or Const.WORLD=='m_val':
             Const.NUM_CHECKPTS = 2
         elif Const.WORLD=='m_lombard':
             Const.NUM_CHECKPTS = 3

@@ -12,8 +12,9 @@ class Estimator(object):
         self.belief = util.Belief(numRows, numCols) 
         self.transProb = util.loadTransProb()
         self._time = 1
-        self._numParticles = 100
+        self._numParticles = 500
         self._particles = [None]*self._numParticles
+        self._tMap = {}
             
     ##################################################################################
     # [ Estimation Problem ]
@@ -46,17 +47,11 @@ class Estimator(object):
         p = util.pdf(actual_dist,sd,e)
         return p
     def __state_tran(self,sr,sc,tP,numRows,numCols): 
-        flattr = [[],[]]
-        for i1 in range(numRows):
-            for j1 in range(numCols):
-                val = tP.get(((sr,sc),(i1,j1)),0)
-                flattr[0].append((i1,j1))
-                flattr[1].append(val)
-        if(flattr[1] == [0]*numRows*numCols):
+        flattr = tP[(sr,sc)]
+        if(flattr[1] == [0]*len(flattr[1])):
             tr,tc = random.randint(0,numRows-1),random.randint(0,numCols-1)
         else:
             tr,tc = random.choices(flattr[0],flattr[1])[0]
-        mx = flattr[1][0]
         return (tr,tc)
     def estimate(self, posX: float, posY: float, observedDist: float, isParked: bool) -> None:
         # BEGIN_YOUR_CODE
@@ -67,11 +62,10 @@ class Estimator(object):
         N = self._numParticles
         prcls = self._particles
         wts = [0]*N
-        tP = self.transProb
         e = observedDist
+        tP = self._tMap
         # setup s0
-        print(t)
-        if(t % 10000 == 1):
+        if(t == 1):
             flatBelief = [[],[]]
             for i in range(numRows):
                 for j in range(numCols):
@@ -87,6 +81,13 @@ class Estimator(object):
                     # approach 3
                     flatBelief[0].append((i,j))
                     flatBelief[1].append(util.pdf(e,sd,math.sqrt(abs(posX-gridX)**2 + abs(posY-gridY)**2)))
+                    self._tMap[(i,j)] = [[],[]]
+                    for i1 in range(numRows):
+                        for j1 in range(numCols):
+                            if(((i,j),(i1,j1)) in self.transProb):
+                                self._tMap[(i,j)][0].append((i1,j1))
+                                self._tMap[(i,j)][1].append(self.transProb[((i,j),(i1,j1))])
+            # print(self._tMap)
             for k in range(N):
                 prcls[k] = random.choices(flatBelief[0],flatBelief[1])[0]
             # print(prcls)
@@ -103,7 +104,7 @@ class Estimator(object):
             prcls[k] = random.choices(prcls1,wts)[0]
         # inferencing from the particles
         for k in range(N):
-            self.belief.addProb(prcls[k][0],prcls[k][1],1000)
+            self.belief.addProb(prcls[k][0],prcls[k][1],10000)
         self._time += 1
         self._particles = prcls
         self.belief.normalize()
