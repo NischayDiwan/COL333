@@ -12,6 +12,8 @@ class Estimator(object):
         self.belief = util.Belief(numRows, numCols) 
         self.transProb = util.loadTransProb()
         self._time = 1
+        self._numParticles = 5
+        self._particles = [None]*self._numParticles
             
     ##################################################################################
     # [ Estimation Problem ]
@@ -37,24 +39,58 @@ class Estimator(object):
     # - Do normalize self.belief after updating !!
 
     ###################################################################################
+    def __state_tran(self,sr,sc,tP,numRows,numCols):
+        tr,tc = sr,sc
+        for i1 in range(numRows):
+            for j1 in range(numCols):
+                val = tP.get(((sr,sc),(i1,j1)),0)
+                if(val >0.2):
+                    tr,tc = i1,j1
+        return (tr,tc)
     def estimate(self, posX: float, posY: float, observedDist: float, isParked: bool) -> None:
         # BEGIN_YOUR_CODE
+        t = self._time
         numRows = self.belief.getNumRows()
         numCols = self.belief.getNumCols()
         sd = Const.SONAR_STD
         d = sd
+        N = self._numParticles
+        prcls = self._particles
+        wts = [0]*N
+        tP = self.transProb
+        e = observedDist
+        # setup s0
+        if(t % 5 == 1 or isParked):
+            flatBelief = [[],[]]
+            for i in range(numRows):
+                for j in range(numCols):
+                    gridX = util.colToX(j)
+                    gridY = util.rowToY(i)
+                    # approach 1
+                    # if((observedDist*(1-d))**2 <= abs(posX-gridX)**2 + abs(posY-gridY)**2 <= (observedDist*(1+d))**2):
+                    #     self.belief.setProb(i,j,1000000)
+                    # else:
+                    #     self.belief.setProb(i,j,0.00000001)
+                    # approach 2
+                    # self.belief.setProb(i,j,util.pdf(observedDist,d,math.sqrt(abs(posX-gridX)**2 + abs(posY-gridY)**2)))
+                    # approach 3
+                    flatBelief[0].append((i,j))
+                    flatBelief[1].append(util.pdf(observedDist,d,math.sqrt(abs(posX-gridX)**2 + abs(posY-gridY)**2)))
+            for k in range(N):
+                prcls[k] = random.choices(flatBelief[0],flatBelief[1])[0]
+            # print(prcls)
+        # step 1
+        else:
+            for k in range(N):
+                sr = prcls[k][0]
+                sc = prcls[k][1]
+                prcls[k] = self.__state_tran(sr,sc,tP,numRows,numCols)
+        # step 2
+        
+        for k in range(N):
+            self.belief.addProb(prcls[k][0],prcls[k][1],1) 
         self._time += 1
-        for i in range(numRows):
-            for j in range(numCols):
-                gridX = util.colToX(j)
-                gridY = util.rowToY(i)
-                # approach 1
-                # if((observedDist*(1-d))**2 <= abs(posX-gridX)**2 + abs(posY-gridY)**2 <= (observedDist*(1+d))**2):
-                #     self.belief.setProb(i,j,1000000)
-                # else:
-                #     self.belief.setProb(i,j,0.00000001)
-                # approach 2
-                self.belief.setProb(i,j,util.pdf(observedDist,d,math.sqrt(abs(posX-gridX)**2 + abs(posY-gridY)**2)))
+        self._particles = prcls
         self.belief.normalize()
         # END_YOUR_CODE
         return
