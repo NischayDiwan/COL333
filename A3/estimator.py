@@ -12,7 +12,7 @@ class Estimator(object):
         self.belief = util.Belief(numRows, numCols) 
         self.transProb = util.loadTransProb()
         self._time = 1
-        self._numParticles = 5
+        self._numParticles = 100
         self._particles = [None]*self._numParticles
             
     ##################################################################################
@@ -39,13 +39,24 @@ class Estimator(object):
     # - Do normalize self.belief after updating !!
 
     ###################################################################################
-    def __state_tran(self,sr,sc,tP,numRows,numCols):
-        tr,tc = sr,sc
+    def __sens_model(self,sr,sc,e,posX,posY,sd):
+        spX = util.colToX(sc)
+        spY = util.rowToY(sr)
+        actual_dist = math.sqrt(abs(posX-spX)**2 + abs(posY-spY)**2)
+        p = util.pdf(actual_dist,sd,e)
+        return p
+    def __state_tran(self,sr,sc,tP,numRows,numCols): 
+        flattr = [[],[]]
         for i1 in range(numRows):
             for j1 in range(numCols):
                 val = tP.get(((sr,sc),(i1,j1)),0)
-                if(val >0.2):
-                    tr,tc = i1,j1
+                flattr[0].append((i1,j1))
+                flattr[1].append(val)
+        if(flattr[1] == [0]*numRows*numCols):
+            tr,tc = random.randint(0,numRows-1),random.randint(0,numCols-1)
+        else:
+            tr,tc = random.choices(flattr[0],flattr[1])[0]
+        mx = flattr[1][0]
         return (tr,tc)
     def estimate(self, posX: float, posY: float, observedDist: float, isParked: bool) -> None:
         # BEGIN_YOUR_CODE
@@ -53,14 +64,14 @@ class Estimator(object):
         numRows = self.belief.getNumRows()
         numCols = self.belief.getNumCols()
         sd = Const.SONAR_STD
-        d = sd
         N = self._numParticles
         prcls = self._particles
         wts = [0]*N
         tP = self.transProb
         e = observedDist
         # setup s0
-        if(t % 5 == 1 or isParked):
+        print(t)
+        if(t % 10000 == 1):
             flatBelief = [[],[]]
             for i in range(numRows):
                 for j in range(numCols):
@@ -75,20 +86,24 @@ class Estimator(object):
                     # self.belief.setProb(i,j,util.pdf(observedDist,d,math.sqrt(abs(posX-gridX)**2 + abs(posY-gridY)**2)))
                     # approach 3
                     flatBelief[0].append((i,j))
-                    flatBelief[1].append(util.pdf(observedDist,d,math.sqrt(abs(posX-gridX)**2 + abs(posY-gridY)**2)))
+                    flatBelief[1].append(util.pdf(e,sd,math.sqrt(abs(posX-gridX)**2 + abs(posY-gridY)**2)))
             for k in range(N):
                 prcls[k] = random.choices(flatBelief[0],flatBelief[1])[0]
             # print(prcls)
         # step 1
         else:
             for k in range(N):
-                sr = prcls[k][0]
-                sc = prcls[k][1]
-                prcls[k] = self.__state_tran(sr,sc,tP,numRows,numCols)
+                prcls[k] = self.__state_tran(prcls[k][0],prcls[k][1],tP,numRows,numCols)
         # step 2
-        
+        for k in range(k):
+            wts[k] = self.__sens_model(prcls[k][0],prcls[k][1],e,posX,posY,sd)
+        # step 3
+        prcls1 = prcls.copy()
         for k in range(N):
-            self.belief.addProb(prcls[k][0],prcls[k][1],1) 
+            prcls[k] = random.choices(prcls1,wts)[0]
+        # inferencing from the particles
+        for k in range(N):
+            self.belief.addProb(prcls[k][0],prcls[k][1],1000)
         self._time += 1
         self._particles = prcls
         self.belief.normalize()
