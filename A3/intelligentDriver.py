@@ -12,7 +12,7 @@ from engine.vector import Vec2d
 from engine.model.car.car import Car
 from engine.model.layout import Layout
 from engine.model.car.junior import Junior
-from configparser import InterpolationMissingOptionError
+import heapq
 
 # Class: Graph
 # -------------
@@ -32,9 +32,9 @@ class IntelligentDriver(Junior):
         self.burnInIterations = 30
         self.layout = layout 
         # self.worldGraph = None
+        self.transProb = util.loadTransProb()
         self.worldGraph = self.createWorldGraph()
         self.checkPoints = self.layout.getCheckPoints() # a list of single tile locations corresponding to each checkpoint
-        self.transProb = util.loadTransProb()
         
     # ONE POSSIBLE WAY OF REPRESENTING THE GRID WORLD. FEEL FREE TO CREATE YOUR OWN REPRESENTATION.
     # Function: Create World Graph
@@ -42,8 +42,23 @@ class IntelligentDriver(Junior):
     # Using self.layout of IntelligentDriver, create a graph representing the given layout.
     def createWorldGraph(self):
         nodes = []
-        edges = []
+        edges = {}
         # create self.worldGraph using self.layout
+        for p1,p2 in self.transProb.keys():
+            if self.transProb[(p1,p2)] != 0:
+                if p1 not in nodes:
+                    nodes.append(p1)
+                if p2 not in nodes:
+                    nodes.append(p2)
+                if edges.get(p1) == None:
+                    edges[p1] = [p2]
+                elif p2 not in edges[p1]:
+                    edges[p1].append(p2)
+                if edges.get(p2) == None:
+                    edges[p2] = [p1]
+                elif p1 not in edges[p2]:
+                    edges[p2].append(p1)
+
         numRows, numCols = self.layout.getBeliefRows(), self.layout.getBeliefCols()
 
         # NODES #
@@ -72,22 +87,24 @@ class IntelligentDriver(Junior):
                     blockTiles.append(blockTile)
 
         ## Remove blockTiles from 'nodes'
-        nodes = [x for x in nodes if x not in blockTiles]
+        # nodes = [x for x in nodes if x not in blockTiles]
 
-        for node in nodes:
-            x, y = node[0], node[1]
-            adjNodes = [(x, y-1), (x, y+1), (x-1, y), (x+1, y)]
+        # for node in nodes:
+            # x, y = node[0], node[1]
+            # adjNodes = [(x, y-1), (x, y+1), (x-1, y), (x+1, y)]
             
             # only keep allowed (within boundary) adjacent nodes
-            adjacentNodes = []
-            for tile in adjNodes:
-                if tile[0]>=0 and tile[1]>=0 and tile[0]<numRows and tile[1]<numCols:
-                    if tile not in blockTiles:
-                        adjacentNodes.append(tile)
+            # adjacentNodes = []
+            # for tile in adjNodes:
+                # if tile[0]>=0 and tile[1]>=0 and tile[0]<numRows and tile[1]<numCols:
+                    # if tile not in blockTiles:
+                        # adjacentNodes.append(tile)
 
-            for tile in adjacentNodes:
-                edges.append((node, tile))
-                edges.append((tile, node))
+            # for tile in adjacentNodes:
+                # if self.transProb.get((node,tile),0) != 0:
+                    # edges.append((node, tile))
+                # if self.transProb.get((tile,node),0) != 0:(
+                    # edges.append((tile, node))
         return Graph(nodes, edges)
 
     #######################################################################################
@@ -112,12 +129,39 @@ class IntelligentDriver(Junior):
         - You can explore some files "layout.py", "model.py", "controller.py", etc.
          to find some methods that might help in your implementation. 
         '''
-        goalPos = (0, 0) # next tile 
+        goalPos = None # next tile 
         moveForward = True
 
         currPos = self.getPos() # the current 2D location of the AutoCar (refer util.py to convert it to tile (or grid cell) coordinate)
-        # BEGIN_YOUR_CODE 
-
+        # BEGIN_YOUR_CODE
+        # Dijkstra's Based Implementation. Use weights of 'occupied' as 100000 because max board size is 50 x 50
+        distances = {}
+        prev_edges = {}
+        posX = currPos[0]
+        posY = currPos[1]
+        c = util.xToCol(posX)
+        r = util.yToRow(posY)
+        priority_queue = []
+        heapq.heappush(priority_queue,(0,(c,r),None))
+        while len(priority_queue) != 0:
+            curr = heapq.heappop(priority_queue)
+            distances[curr[1]] = curr[0]
+            prev_edges[curr[1]] = curr[2]
+            for dest in self.worldGraph.edges.get(curr[1],[]):
+                print(dest)
+                maxBelief = 0.0
+                for belief in beliefOfOtherCars:
+                    maxBelief = max(maxBelief,belief.getProb(dest[0],dest[1]))
+                weight = 1
+                if maxBelief > 0.1:
+                    weight = 100000
+                if distances.get(dest) is None or distances[dest] > distances[curr[1]] + weight:
+                    distances[dest] = distances[curr[1]] + weight
+                    prev_edges[dest] = curr[1]
+                    heapq.heappush(priority_queue,(distances[dest],dest,curr))
+        goalPos = self.checkPoints[chkPtsSoFar]
+        while prev_edges[goalPos] != (r,c):
+            goalPos = prev_edges[goalPos] 
         # END_YOUR_CODE
         return goalPos, moveForward
 
