@@ -154,7 +154,7 @@ class IntelligentDriver(Junior):
                 for belief in beliefOfOtherCars:
                     maxBelief = max(maxBelief,belief.getProb(dest[0],dest[1]))
                 weight = 1
-                if maxBelief > 0.2:
+                if maxBelief > 0.5:
                     weight = 100000
                 if distances[dest] > distances[curr[1]] + weight:
                     distances[dest] = distances[curr[1]] + weight
@@ -165,8 +165,10 @@ class IntelligentDriver(Junior):
         moveForward = distances[next_goal] <= 100000
         while prev_edges[next_goal] != (r,c):
             next_goal = prev_edges[next_goal] 
+        rt_goal = (util.colToX(next_goal[1]),util.rowToY(next_goal[0]))
+        return rt_goal, moveForward
         # END_YOUR_CODE
-        return next_goal, moveForward
+        
 
     # DO NOT MODIFY THIS METHOD !
     # Function: Get Autonomous Actions

@@ -65,7 +65,7 @@ class Estimator(object):
         e = observedDist
         tP = self._tMap
         # setup s0
-        if(t == 1):
+        if(t == 1 or (isParked and t % 50 == 1)):
             flatBelief = [[],[]]
             for i in range(numRows):
                 for j in range(numCols):
