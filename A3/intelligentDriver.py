@@ -45,20 +45,20 @@ class IntelligentDriver(Junior):
         nodes = []
         edges = {}
         # create self.worldGraph using self.layout
-        for p1,p2 in self.transProb.keys():
-            if self.transProb[(p1,p2)] != 0:
-                if p1 not in nodes:
-                    nodes.append(p1)
-                if p2 not in nodes:
-                    nodes.append(p2)
-                if edges.get(p1) == None:
-                    edges[p1] = [p2]
-                elif p2 not in edges[p1]:
-                    edges[p1].append(p2)
-                if edges.get(p2) == None:
-                    edges[p2] = [p1]
-                elif p1 not in edges[p2]:
-                    edges[p2].append(p1)
+        # for p1,p2 in self.transProb.keys():
+        #     if self.transProb[(p1,p2)] != 0:
+        #         if p1 not in nodes:
+        #             nodes.append(p1)
+        #         if p2 not in nodes:
+        #             nodes.append(p2)
+        #         if edges.get(p1) == None:
+        #             edges[p1] = [p2]
+        #         elif p2 not in edges[p1]:
+        #             edges[p1].append(p2)
+        #         if edges.get(p2) == None:
+        #             edges[p2] = [p1]
+        #         elif p1 not in edges[p2]:
+        #             edges[p2].append(p1)
 
         numRows, numCols = self.layout.getBeliefRows(), self.layout.getBeliefCols()
 
@@ -153,16 +153,16 @@ class IntelligentDriver(Junior):
                 maxBelief = 0.0
                 for belief in beliefOfOtherCars:
                     maxBelief = max(maxBelief,belief.getProb(dest[0],dest[1]))
-                weight = 1
-                if maxBelief > 0.5:
-                    weight = 100000
+                weight = maxBelief
+                # if maxBelief > 0.15:
+                    # weight = 100000
                 if distances[dest] > distances[curr[1]] + weight:
                     distances[dest] = distances[curr[1]] + weight
                     prev_edges[dest] = curr[1]
                     heapq.heappush(priority_queue,(distances[dest],dest))
         goalPos = self.checkPoints[chkPtsSoFar]
         next_goal = (goalPos[0],goalPos[1])
-        moveForward = distances[next_goal] <= 100000
+        moveForward = distances[next_goal] <= 0.2
         while prev_edges[next_goal] != (r,c):
             next_goal = prev_edges[next_goal] 
         rt_goal = (util.colToX(next_goal[1]),util.rowToY(next_goal[0]))

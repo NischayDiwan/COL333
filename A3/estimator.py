@@ -12,7 +12,7 @@ class Estimator(object):
         self.belief = util.Belief(numRows, numCols) 
         self.transProb = util.loadTransProb()
         self._time = 1
-        self._numParticles = 1000
+        self._numParticles = 100
         self._particles = [None]*self._numParticles
         self._tMap = {}
             
@@ -79,6 +79,7 @@ class Estimator(object):
                             if(((i,j),(i1,j1)) in self.transProb):
                                 self._tMap[(i,j)][0].append((i1,j1))
                                 self._tMap[(i,j)][1].append(self.transProb[((i,j),(i1,j1))])
+                    self.belief.setProb(i,j,0)
             # print(self._tMap)
             for k in range(N):
                 prcls[k] = random.choices(flatBelief[0],flatBelief[1])[0]
@@ -96,7 +97,7 @@ class Estimator(object):
             prcls[k] = random.choices(prcls1,wts)[0]
         # inferencing from the particles
         for k in range(N):
-            self.belief.addProb(prcls[k][0],prcls[k][1],100000)
+            self.belief.addProb(prcls[k][0],prcls[k][1],1)
         self._time += 1
         self._particles = prcls
         self.belief.normalize()
