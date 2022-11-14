@@ -1,0 +1,9 @@
+Nischay Diwan : 2020CS50433, Srijan Gupta: 2020CS50444
+
+Estimator Algorithm:
+
+
+
+Intelligent Driver Algorithm:
+
+The intelligent driver uses Dijkstra’s algorithm to determine the path to the next checkpoint. The edge weights are determined using the maximum belief of all the cars at the second point of the edge. If the total weight of the optimal path crosses a certain threshold, the car stops due to a high chance of a car being in the middle of the way. 
