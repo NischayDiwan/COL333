@@ -13,6 +13,7 @@ from engine.model.car.car import Car
 from engine.model.layout import Layout
 from engine.model.car.junior import Junior
 import heapq
+from queue import PriorityQueue
 
 # Class: Graph
 # -------------
@@ -89,22 +90,20 @@ class IntelligentDriver(Junior):
         ## Remove blockTiles from 'nodes'
         # nodes = [x for x in nodes if x not in blockTiles]
 
-        # for node in nodes:
-            # x, y = node[0], node[1]
-            # adjNodes = [(x, y-1), (x, y+1), (x-1, y), (x+1, y)]
+        for node in nodes:
+            x, y = node[0], node[1]
+            adjNodes = [(x, y-1), (x, y+1), (x-1, y), (x+1, y)]
             
             # only keep allowed (within boundary) adjacent nodes
-            # adjacentNodes = []
-            # for tile in adjNodes:
-                # if tile[0]>=0 and tile[1]>=0 and tile[0]<numRows and tile[1]<numCols:
-                    # if tile not in blockTiles:
-                        # adjacentNodes.append(tile)
-
-            # for tile in adjacentNodes:
-                # if self.transProb.get((node,tile),0) != 0:
-                    # edges.append((node, tile))
-                # if self.transProb.get((tile,node),0) != 0:(
-                    # edges.append((tile, node))
+            adjacentNodes = []
+            for tile in adjNodes:
+                if tile[0]>=0 and tile[1]>=0 and tile[0]<numRows and tile[1]<numCols:
+                    if tile not in blockTiles:
+                        adjacentNodes.append(tile)
+            edges[node] = []
+            for tile in adjacentNodes:
+                    if tile not in edges[node]:
+                        edges[node].append(tile)
         return Graph(nodes, edges)
 
     #######################################################################################
@@ -137,33 +136,37 @@ class IntelligentDriver(Junior):
         # Dijkstra's Based Implementation. Use weights of 'occupied' as 100000 because max board size is 50 x 50
         distances = {}
         prev_edges = {}
+        for node in self.worldGraph.nodes:
+            distances[node] = 1000000000
+            prev_edges[node] = None
         posX = currPos[0]
         posY = currPos[1]
         c = util.xToCol(posX)
         r = util.yToRow(posY)
         priority_queue = []
-        heapq.heappush(priority_queue,(0,(c,r),None))
+        heapq.heappush(priority_queue,(0,(r,c)))
+        distances[(r,c)] = 0
+        prev_edges[(r,c)] = None
         while len(priority_queue) != 0:
             curr = heapq.heappop(priority_queue)
-            distances[curr[1]] = curr[0]
-            prev_edges[curr[1]] = curr[2]
-            for dest in self.worldGraph.edges.get(curr[1],[]):
-                print(dest)
+            for dest in self.worldGraph.edges[curr[1]]:
                 maxBelief = 0.0
                 for belief in beliefOfOtherCars:
                     maxBelief = max(maxBelief,belief.getProb(dest[0],dest[1]))
                 weight = 1
-                if maxBelief > 0.1:
+                if maxBelief > 0.2:
                     weight = 100000
-                if distances.get(dest) is None or distances[dest] > distances[curr[1]] + weight:
+                if distances[dest] > distances[curr[1]] + weight:
                     distances[dest] = distances[curr[1]] + weight
                     prev_edges[dest] = curr[1]
-                    heapq.heappush(priority_queue,(distances[dest],dest,curr))
+                    heapq.heappush(priority_queue,(distances[dest],dest))
         goalPos = self.checkPoints[chkPtsSoFar]
-        while prev_edges[goalPos] != (r,c):
-            goalPos = prev_edges[goalPos] 
+        next_goal = (goalPos[0],goalPos[1])
+        moveForward = distances[next_goal] <= 100000
+        while prev_edges[next_goal] != (r,c):
+            next_goal = prev_edges[next_goal] 
         # END_YOUR_CODE
-        return goalPos, moveForward
+        return next_goal, moveForward
 
     # DO NOT MODIFY THIS METHOD !
     # Function: Get Autonomous Actions
